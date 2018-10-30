@@ -1,28 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cDownloader2
 {
     class Downloads
     {
         //Change to boolean later
-        public void startDownload(string url)
+        public void pingWebsite(string url, string path)
         {
-            Uri pingConnection = new Uri("https://www.apple.com");
-            WebRequest request = WebRequest.Create(pingConnection);
-            WebResponse response = request.GetResponse();
+            var ping = new System.Net.NetworkInformation.Ping();
 
-            Stream objStream = response.GetResponseStream();
-            StreamReader objReader = new StreamReader(objStream, true);
+            var result = ping.Send(url);
 
-            string finalResponse = objReader.ReadToEnd();
-            Debug.Print(finalResponse);
+            if(result.Status == System.Net.NetworkInformation.IPStatus.Success)
+            {
+                startDownload(url,path);
+            }
+        }
+
+
+        public void startDownload(string url, string path)
+        {
+            using(WebClient wc = new WebClient())
+            {
+                var data = wc.DownloadData(url);
+                
+                if (!string.IsNullOrEmpty(wc.ResponseHeaders["Content-Disposition"]))
+                {
+                    wc.DownloadFileAsync(new System.Uri(url), path + "\"" + wc.ResponseHeaders["Content-Disposition"].Substring(wc.ResponseHeaders["Content-Disposition"].IndexOf("filename=") + 9).Replace("\"", ""));
+                    
+                }
+
+                
+                
+            }
+
+            byte[] size = new WebClient().DownloadData(url);
         }
     }
 }

@@ -16,6 +16,7 @@ namespace cDownloader2
         {
             var links = new LinksWindow();
             links.Show();
+           
             
         }
 
