@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Net;
 using System.Windows;
 using System.Windows.Forms;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace cDownloader2
 {
@@ -23,22 +25,32 @@ namespace cDownloader2
        private void startDownload(string url, string location)
 
         {
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            string disposition = response.Headers["Content-Disposition"];
+            string filename = disposition.Substring(disposition.IndexOf("filename=") + 10).Replace("\"", "");
+            Dir.Text = filename;
+            response.Close();
+
             
+
             using (var client = new WebClient())
             {
-              /*  var request = WebRequest.Create(url);
-                var response = request.GetResponse();
-                var contentDisposition = response.Headers["Content-Disposition"];
-                const string contentFileNamePortion = "filename=";
-                var fileNameStartIndex = contentDisposition.IndexOf(contentFileNamePortion, StringComparison.InvariantCulture) + contentFileNamePortion.Length;
-                var originalFileNameLength = contentDisposition.Length - fileNameStartIndex;
-                var originalFileName = contentDisposition.Substring(fileNameStartIndex, originalFileNameLength);
-                client.UseDefaultCredentials = true;
-                */
+                /*  var request = WebRequest.Create(url);
+                  var response = request.GetResponse();
+                  var contentDisposition = response.Headers["Content-Disposition"];
+                  const string contentFileNamePortion = "filename=";
+                  var fileNameStartIndex = contentDisposition.IndexOf(contentFileNamePortion, StringComparison.InvariantCulture) + contentFileNamePortion.Length;
+                  var originalFileNameLength = contentDisposition.Length - fileNameStartIndex;
+                  var originalFileName = contentDisposition.Substring(fileNameStartIndex, originalFileNameLength);
+                  client.UseDefaultCredentials = true;
+                  */
 
-                client.DownloadFileAsync(new Uri(url), location);
+
+                /*client.DownloadFileAsync(new Uri(url), location + Path.DirectorySeparatorChar + filename);
                 client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(downloadChange);
-                client.DownloadFileCompleted += new AsyncCompletedEventHandler(downloadComplete);
+                client.DownloadFileCompleted += new AsyncCompletedEventHandler(downloadComplete);*/
+                
                 
 
             }
@@ -82,13 +94,14 @@ namespace cDownloader2
 
             try
             {
-                SaveFileDialog saveFileDialog = new SaveFileDialog();
-                saveFileDialog.Filter = "All Files|*.*";
-                DialogResult r= saveFileDialog.ShowDialog();
+                FolderBrowserDialog saveFileDialog = new FolderBrowserDialog();
+                 
+               
 
-                if(r == System.Windows.Forms.DialogResult.OK)
+                if(saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    location = saveFileDialog.FileName;
+                    location = saveFileDialog.SelectedPath;
+                    Dir.Text = location;
                 }
             }
             catch 
@@ -116,6 +129,7 @@ namespace cDownloader2
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             client.CancelAsync();
+            
         }
 
         void doMath(double number)
