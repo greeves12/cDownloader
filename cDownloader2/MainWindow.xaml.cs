@@ -1,6 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Net;
 using System.Windows;
+using System.Windows.Forms;
 
 namespace cDownloader2
 {
@@ -11,6 +13,7 @@ namespace cDownloader2
     {
         WebClient client = new WebClient();
         string location;
+        double bytes;
         public MainWindow()
         {
             InitializeComponent();
@@ -23,16 +26,32 @@ namespace cDownloader2
             
             using (var client = new WebClient())
             {
+              /*  var request = WebRequest.Create(url);
+                var response = request.GetResponse();
+                var contentDisposition = response.Headers["Content-Disposition"];
+                const string contentFileNamePortion = "filename=";
+                var fileNameStartIndex = contentDisposition.IndexOf(contentFileNamePortion, StringComparison.InvariantCulture) + contentFileNamePortion.Length;
+                var originalFileNameLength = contentDisposition.Length - fileNameStartIndex;
+                var originalFileName = contentDisposition.Substring(fileNameStartIndex, originalFileNameLength);
+                client.UseDefaultCredentials = true;
+                */
 
+                client.DownloadFileAsync(new Uri(url), location);
                 client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(downloadChange);
                 client.DownloadFileCompleted += new AsyncCompletedEventHandler(downloadComplete);
-                client.DownloadFileAsync(new System.Uri(url), location);
+                
 
             }
         }
         private void downloadChange(object sender, DownloadProgressChangedEventArgs e)
         {
-            Progress.Value = e.ProgressPercentage;
+            double bytesIn = double.Parse(e.BytesReceived.ToString());
+            double totalBytes = double.Parse(e.TotalBytesToReceive.ToString());
+            double percentage = (bytesIn / totalBytes) * 100;
+            Progress.Value = int.Parse(Math.Truncate(percentage).ToString());
+
+            doMath(bytesIn);
+
             DownloadButton.IsEnabled = false;
             CancelButton.IsEnabled = true;
             Folder.IsEnabled = false;
@@ -43,11 +62,11 @@ namespace cDownloader2
         {
             if(e.Cancelled == false)
             {
-                DownloadBox.Text = "Status: Download Finished";
+                Status.Text = "Status: Download Finished";
             }
             else
             {
-                DownloadBox.Text = "Status: Download Cancelled";
+                Status.Text = "Status: Download Cancelled";
             }
             URLBox.IsReadOnly = false;
             Progress.Value = 0;
@@ -59,36 +78,55 @@ namespace cDownloader2
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.Forms.FolderBrowserDialog browser = new System.Windows.Forms.FolderBrowserDialog();
             
-            if(browser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+
+            try
             {
-                location = browser.SelectedPath;
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = "All Files|*.*";
+                DialogResult r= saveFileDialog.ShowDialog();
+
+                if(r == System.Windows.Forms.DialogResult.OK)
+                {
+                    location = saveFileDialog.FileName;
+                }
+            }
+            catch 
+            {
+
             }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            if(URLBox.Text != "Insert URL")
+            if(URLBox.Text != string.Empty)
             {
-                var ping = new System.Net.NetworkInformation.Ping();
-
-                var result = ping.Send(URLBox.Text);
-
-                if(result.Status == System.Net.NetworkInformation.IPStatus.Success)
-                {
-                    if (location != null)
+               
+              
+                    if (location != string.Empty)
                     {
+                    Status.Text = "Status: Downloading...";
                         startDownload(URLBox.Text, location);
                     }
-                }
-                else
-                {
-                    DownloadBox.Text = "Website is down, exit imminent";
-                }
+                
+                
             }
         }
 
-        
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            client.CancelAsync();
+        }
+
+        void doMath(double number)
+        {
+            if(number <= 1024)
+            {
+                bytes = number;
+            }else if(number > 1024)
+            {
+                bytes = number / 1024;
+            }
+        }
     }
 }
