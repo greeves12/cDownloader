@@ -4,7 +4,7 @@ using System.Net;
 using System.Windows;
 using System.Windows.Forms;
 using System.IO;
-using System.Threading.Tasks;
+using System.Net.NetworkInformation;
 
 namespace cDownloader2
 {
@@ -25,35 +25,20 @@ namespace cDownloader2
        private void startDownload(string url, string location)
 
         {
-            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(url);
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            string disposition = response.Headers["Content-Disposition"];
-            string filename = disposition.Substring(disposition.IndexOf("filename=") + 10).Replace("\"", "");
-            Dir.Text = filename;
-            response.Close();
+         
+                
+                string filename = System.IO.Path.GetFileName(url);
 
-            
-
-            using (var client = new WebClient())
-            {
-                /*  var request = WebRequest.Create(url);
-                  var response = request.GetResponse();
-                  var contentDisposition = response.Headers["Content-Disposition"];
-                  const string contentFileNamePortion = "filename=";
-                  var fileNameStartIndex = contentDisposition.IndexOf(contentFileNamePortion, StringComparison.InvariantCulture) + contentFileNamePortion.Length;
-                  var originalFileNameLength = contentDisposition.Length - fileNameStartIndex;
-                  var originalFileName = contentDisposition.Substring(fileNameStartIndex, originalFileNameLength);
-                  client.UseDefaultCredentials = true;
-                  */
-
-
-                /*client.DownloadFileAsync(new Uri(url), location + Path.DirectorySeparatorChar + filename);
+               
                 client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(downloadChange);
-                client.DownloadFileCompleted += new AsyncCompletedEventHandler(downloadComplete);*/
-                
-                
+                client.DownloadFileCompleted += new AsyncCompletedEventHandler(downloadComplete);
+                client.DownloadFileAsync(new Uri(url), location + Path.DirectorySeparatorChar + filename);
 
-            }
+                DownloadButton.IsEnabled = false;
+                Cancel.IsEnabled = true;
+                Folder.IsEnabled = false;
+                URLBox.IsReadOnly = true;
+            
         }
         private void downloadChange(object sender, DownloadProgressChangedEventArgs e)
         {
@@ -64,10 +49,7 @@ namespace cDownloader2
 
             doMath(bytesIn);
 
-            DownloadButton.IsEnabled = false;
-            CancelButton.IsEnabled = true;
-            Folder.IsEnabled = false;
-            URLBox.IsReadOnly = true;
+            
         }
 
         private void downloadComplete(object sender, AsyncCompletedEventArgs e)
@@ -82,7 +64,7 @@ namespace cDownloader2
             }
             URLBox.IsReadOnly = false;
             Progress.Value = 0;
-            CancelButton.IsEnabled = false;
+            Cancel.IsEnabled = false;
             Folder.IsEnabled = true;
             DownloadButton.IsEnabled = true;
 
@@ -126,21 +108,36 @@ namespace cDownloader2
             }
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            client.CancelAsync();
-            
-        }
 
         void doMath(double number)
         {
+            double nums;
             if(number <= 1024)
             {
-                bytes = number;
+                nums = number;
+                Math.Round(nums, 2);
             }else if(number > 1024)
             {
-                bytes = number / 1024;
+                //kb
+                nums = number / 1024;
+                Math.Round(nums, 2);
+            }else if(number > 1048576)
+            {
+                //Mb
+               nums= number / 1048576;
+                Math.Round(nums, 2);
+            }else if(number > 1073741824)
+            {
+                //Gb
+                nums = number / 1073741824;
+                Math.Round(nums, 2);
             }
+        }
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            client.CancelAsync();
+            client.Dispose();
         }
     }
 }
